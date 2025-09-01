@@ -26,7 +26,6 @@ public class Plugin : BaseUnityPlugin
 		Instance = this;
 		try
 		{
-			RefCollection.Init();
 			Utils.ProperExceptionLogger.Init();
 			AssetResolver.Init(typeof(Sprite));
 			_harmony = new Harmony(PluginInfo.PluginGUID);
