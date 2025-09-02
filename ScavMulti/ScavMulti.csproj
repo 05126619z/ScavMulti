@@ -38,8 +38,7 @@
 	  <HintPath>$(GameAssembliesDir)/Unity.TextMeshPro.dll</HintPath>
 	</Reference>
 
-	<!-- My own source generator that extends the ProtoBuf classes outputted by protobuf-net.BuildTools -->	
-    <!-- <ProjectReference Include="..\ScavMulti.NetObjects.SourceGenerator\ScavMulti.NetObjects.SourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> -->
+	<ProjectReference Include="../MessagePack.Unity/MessagePack.Unity.csproj" />
 
   </ItemGroup>
 
@@ -52,6 +51,7 @@
 		$(AssemblyName).dll;
 		$(AssemblyName).pdb;
 		MessagePack.dll;
+		MessagePack.Unity.dll;
 		MessagePack.Annotations.dll;
 		System.Buffers.dll;
 		System.Memory.dll;

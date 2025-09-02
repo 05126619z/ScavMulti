@@ -26,6 +26,7 @@ public class Plugin : BaseUnityPlugin
 		Instance = this;
 		try
 		{
+            MessagePack.MessagePackSerializer.DefaultOptions = Constants.MessagePackSerializerOptions;
 			Utils.ProperExceptionLogger.Init();
 			AssetResolver.Init(typeof(Sprite));
 			_harmony = new Harmony(PluginInfo.PluginGUID);
