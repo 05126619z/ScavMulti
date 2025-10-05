@@ -15,7 +15,7 @@
     <RootNamespace>ScavMulti</RootNamespace>
   </PropertyGroup>
 
-  <Import Project="vars.targets" />
+  <Import Project="../vars.targets" />
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
