@@ -154,6 +154,7 @@ public class Plugin : BaseUnityPlugin
 						_masterData.WorldGenSeed,
 						WorldGeneration.world.biomeDepth));
 					pendingClient.Enqueue(new ModifiedBlocksInfo(_modifiedBlocks));
+					pendingClient.Enqueue(new DestroyedEntitiesInfo(_destroyedEntityIds));
 				}
 			}
 			if (__instance == _mainExperiment.Body)
@@ -285,15 +286,25 @@ public class Plugin : BaseUnityPlugin
 				var ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5000);
 				_masterData.Server = new(ep);
 				_masterData.Server.Run();
+				_destroyedEntityIds = new();
 			}
 			else
 			{
 				Debug.Log("World gen finished, fixing world");
+				
 				yield return _servInfo.WaitUntilHasData();
-				var data = _servInfo.Dequeue<ModifiedBlocksInfo>();
-				foreach (var kv in data.Entries)
+				var modifiedBlocks = _servInfo.Dequeue<ModifiedBlocksInfo>();
+				foreach (var kv in modifiedBlocks.Entries)
 				{
 					instance.SetBlock(kv.Key, kv.Value);
+				}
+				yield return _servInfo.WaitUntilHasData();
+				var destroyedEntities = _servInfo.Dequeue<DestroyedEntitiesInfo>();
+				var reverseMap = _entityIdentifierMap.ToDictionary(x => x.Value, x => x.Key);
+				foreach (var id in destroyedEntities.Entries)
+				{
+					if (reverseMap.TryGetValue(id, out BuildingEntity e) && e)
+						Object.Destroy(e.gameObject);
 				}
 			}
 			while (coroutine.MoveNext())
@@ -316,5 +327,28 @@ public class Plugin : BaseUnityPlugin
 	private void OnDestroy()
 	{
 		_harmony?.UnpatchSelf();
+	}
+
+	private static Dictionary<BuildingEntity, int> _entityIdentifierMap = new();
+	private static List<int> _destroyedEntityIds;
+	private static int _currentMaxEntityId = 0;
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::BuildingEntity), nameof(global::BuildingEntity.Start))]
+	static void BuildingEntityStartPostfix(BuildingEntity __instance)
+	{
+		if (!_entityIdentifierMap.ContainsKey(__instance))
+			_entityIdentifierMap.Add(__instance, _currentMaxEntityId++);
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::BuildingEntity), "OnDestroy")]
+	static void BuildingEntityOnDestroyPostfix(BuildingEntity __instance)
+	{
+		if (_masterData != null && _entityIdentifierMap.TryGetValue(__instance, out int id))
+		{
+			_destroyedEntityIds.Add(id);
+			_entityIdentifierMap.Remove(__instance);
+		}
 	}
 }

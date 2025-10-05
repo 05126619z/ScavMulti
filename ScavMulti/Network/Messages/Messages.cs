@@ -31,3 +31,8 @@ public record class WorldInfo(
 public record class ModifiedBlocksInfo(
 	[property: Key(0)] Dictionary<Vector2Int, ushort> Entries
 ) : MessageBase;
+
+[MessagePackObject]
+public record class DestroyedEntitiesInfo(
+	[property: Key(0)] IEnumerable<int> Entries
+) : MessageBase;
