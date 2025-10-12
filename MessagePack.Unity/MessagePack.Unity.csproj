@@ -3,8 +3,7 @@
   There is no Nuget package only for it, and the official docs
   (https://github.com/MessagePack-CSharp/MessagePack-CSharp/tree/master?tab=readme-ov-file#unity-support)
   only provide a way to include this in a Unity Project, which is obviously not
-  applicable in our case. Therefore we are forced to include MessagePack as a submodule
-  and compile only what we are interested in.
+  applicable in our case. Therefore we are forced to compile its sources by hand
 -->
 
 <Project Sdk="Microsoft.NET.Sdk">

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScavMulti", "ScavMulti\Scav
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScavMulti.PreloadPatcher", "ScavMulti.PreloadPatcher\ScavMulti.PreloadPatcher.csproj", "{F15A9F9E-002E-41BF-983F-8ABCC5D605FE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessagePack.Unity", "MessagePack.Unity\MessagePack.Unity.csproj", "{19DF432D-CF48-459F-B609-996DFA30C96E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{F15A9F9E-002E-41BF-983F-8ABCC5D605FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F15A9F9E-002E-41BF-983F-8ABCC5D605FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F15A9F9E-002E-41BF-983F-8ABCC5D605FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{19DF432D-CF48-459F-B609-996DFA30C96E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{19DF432D-CF48-459F-B609-996DFA30C96E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{19DF432D-CF48-459F-B609-996DFA30C96E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{19DF432D-CF48-459F-B609-996DFA30C96E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
