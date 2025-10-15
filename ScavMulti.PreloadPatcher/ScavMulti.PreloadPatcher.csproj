@@ -1,0 +1,24 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+	<LangVersion>11</LangVersion>
+  </PropertyGroup>
+
+  <Import Project="../vars.targets" />
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+  </ItemGroup>
+  
+  <Target Name="CopyPreloadPatcherToPatchersFolder" Condition="'$(Configuration)'=='DEBUG'" AfterTargets="AfterBuild">
+    <MakeDir Directories="$(BepInExDir)/patchers/$(PluginDirName)" />
+	<CombinePath BasePath="$(OutDir)" Paths="$(AssemblyName).dll;$(AssemblyName).pdb">
+	   <Output TaskParameter="CombinedPaths" ItemName="RequiredFilesToCopy_Combined" />
+	</CombinePath>
+	<Copy SourceFiles="@(RequiredFilesToCopy_Combined)" DestinationFolder="$(BepInExDir)/patchers/$(PluginDirName)" />
+  </Target>
+
+</Project>

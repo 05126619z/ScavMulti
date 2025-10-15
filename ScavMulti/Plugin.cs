@@ -15,17 +15,26 @@ using ScavMulti.Network.Messages;
 
 namespace ScavMulti;
 
+record class MasterData
+{
+	public UnityEngine.Random.State WorldGenSeed { get; set; }
+	public Server Server { get; set; }
+}
+
 [BepInPlugin(PluginInfo.PluginGUID, PluginInfo.PluginName, PluginInfo.PluginVersion)]
 public class Plugin : BaseUnityPlugin
 {
 	public static Plugin Instance { get; private set; }
 	private Harmony _harmony = null;
 
+	public new BepInEx.Logging.ManualLogSource Logger => base.Logger;
+
 	private void Awake()
     {
 		Instance = this;
 		try
 		{
+            MessagePack.MessagePackSerializer.DefaultOptions = Constants.MessagePackSerializerOptions;
 			Utils.ProperExceptionLogger.Init();
 			AssetResolver.Init(typeof(Sprite));
 			_harmony = new Harmony(PluginInfo.PluginGUID);
@@ -40,7 +49,8 @@ public class Plugin : BaseUnityPlugin
 	}
 
 	static ExperimentInfo _mainExperiment = new(null, null);
-	static bool _isWorldGenFinished = false;
+	static bool _isWorldInitFinished = false;
+	static MasterData _masterData;
 
 	[HarmonyPostfix]
 	[HarmonyPatch(typeof(global::Body), "Start")]
@@ -50,7 +60,7 @@ public class Plugin : BaseUnityPlugin
 		{
 			Debug.Log("MainBody::Start");
 			_mainExperiment = new(__instance.transform.parent.gameObject, __instance);
-			_isWorldGenFinished = false;
+			_isWorldInitFinished = false;
 		}
 		// else
 		// {
@@ -59,93 +69,19 @@ public class Plugin : BaseUnityPlugin
 		// }
 	}
 
-	static void SendChunkBackgroundData(Client client)
-	{
-		var spriteRenderers = WorldGeneration.world.worldGrid.transform.GetComponentsInChildren<SpriteRenderer>();
-		var chunkObjects = spriteRenderers.Where(x => x.gameObject.name == "ChunkBack");
-		var uniqueSpriteNames = chunkObjects.Select(x => x.sprite).Distinct().Select(AssetResolver.GetAssetPath).ToArray();
-		client.Enqueue(new ChunkBackgroundSpriteNames(uniqueSpriteNames));
-		var bgsToSend = new List<ChunkBackground.Entry>();
-		for (uint x = 0; x < WorldGeneration.world.chunkWidth; x++)
-		{
-			for (uint y = 0; y < WorldGeneration.world.chunkHeight; y++)
-			{
-				var chunkObject = WorldGeneration.world.renderChunks[x, y].GetComponentsInChildren<SpriteRenderer>().Where(x => x.gameObject.name == "ChunkBack").FirstOrDefault();
-				if (chunkObject)
-				{
-					bgsToSend.Add(new ChunkBackground.Entry(x, y, Array.IndexOf(uniqueSpriteNames, AssetResolver.GetAssetPath(chunkObject.sprite))));
-				}
-			}
-		}
-		client.Enqueue(new ChunkBackground(bgsToSend.ToArray()));
-		var wallHoleObjects = spriteRenderers.Where(x => x.gameObject.name.StartsWith("wallholes"));
-		var wallHolesToSend = new List<WallHoles.WallHole>(wallHoleObjects.Count());
-		foreach (var wallHole in wallHoleObjects)
-		{
-			var transform = wallHole.transform;
-			wallHolesToSend.Add(new WallHoles.WallHole(
-				transform.position.x, transform.position.y,
-				transform.rotation.eulerAngles.z,
-				wallHole.GetComponent<AudioSource>().pitch
-			));
-		}
-		client.Enqueue(new WallHoles(wallHolesToSend.ToArray()));
-	}
-
-	static void SendChunk(Client client, uint chunkX, uint chunkY)
-	{
-		var world = WorldGeneration.world;
-		Debug.Log($"Sending chunk {chunkX}x{chunkY}...");
-		if (chunkX > world.width || chunkY > world.height)
-		{
-			Debug.LogError("Invalid chunk requested");
-			client.Enqueue(new Error(false, "Out Of Bounds chunk requested"));
-			return;
-		}
-		var chunkSize = WorldGeneration.CHUNKSIZE;
-		var basePos = new Vector2Int((int)chunkX, (int)chunkY) * chunkSize;
-		var blockData = new ushort[chunkSize, chunkSize];
-		var worldBlocks = world.worldBlocks;
-		for (int y = 0; y < chunkSize; y++)
-		{
-			for (int x = 0; x < chunkSize; x++)
-			{
-				var c = worldBlocks[basePos.x + x, basePos.y + y];
-				blockData[x, y] = c;
-			}
-		}
-		var response = new ChunkInfo(blockData);
-		client.Enqueue(response);
-	}
-
 	static void MainBodyUpdatePostfix()
 	{
-		foreach (var deadClient in _server.RemoveDeadClients())
+		foreach (var deadClient in _masterData.Server.RemoveDeadClients())
 		{
 			Debug.LogWarning($"Client is leaving. Exception: {deadClient.ClientCancelledException}");
 		}
-		foreach (var client in _server)
+		foreach (var client in _masterData.Server)
 		{
 			if (client.IsRunning && !client.IsEmpty)
 			{
 				var data = client.Dequeue();
 				switch (data)
 				{
-					case ChunkRequest chunkRequest:
-						SendChunk(client, chunkRequest.X, chunkRequest.Y);
-						break;
-					case ChunkRequestWhole:
-						for (uint x = 0; x < WorldGeneration.world.chunkWidth; x++)
-						{
-							for (uint y = 0; y < WorldGeneration.world.chunkHeight; y++)
-							{
-								SendChunk(client, x, y);
-							}
-						}
-						break;
-					case ChunkBackgroundRequest:
-						SendChunkBackgroundData(client);
-						break;
 					default:
 						Debug.LogError($"Unknown or unimplemented message received: {data.GetType()}");
 						break;
@@ -180,34 +116,15 @@ public class Plugin : BaseUnityPlugin
 		// body.crouching = (!body.reversedControls && Input.GetKey(KeyCode.K)) || (body.reversedControls && Input.GetKey(KeyCode.I));
 	}
 
-	static Server _server;
-
 	static Client _servInfo;
 
 	[HarmonyPostfix]
 	[HarmonyPatch(typeof(global::Body), "Update")]
 	static void Body_Update_Postfix(Body __instance)
 	{
-		if (!_isWorldGenFinished)
+		if (_isWorldInitFinished)
 		{
-			if (!WorldGeneration.world.generatingWorld)
-			{
-				if (_servInfo == null)
-				{
-					Debug.Log("World gen finished, instantiating socket");
-					
-					var ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5000);
-					_server = new(ep);
-					_server.Run();
-				}
-				else
-					Debug.Log("World transfer finished");
-				_isWorldGenFinished = true;
-			}
-		}
-		else
-		{
-			if (__instance == _mainExperiment.Body && _server != null)
+			if (__instance == _mainExperiment.Body && _masterData != null)
 				MainBodyUpdatePostfix();
 			else
 				OtherBodyUpdatePostfix();
@@ -218,15 +135,15 @@ public class Plugin : BaseUnityPlugin
 	[HarmonyPatch(typeof(global::Body), "Update")]
 	static void Body_Update_Prefix(Body __instance)
 	{
-		if (_isWorldGenFinished)
+		if (_isWorldInitFinished)
 		{
-			if (_server != null)
+			if (_masterData != null)
 			{
-				while (_server.NextPendingClient(out var pendingClient))
+				while (_masterData.Server.NextPendingClient(out var pendingClient))
 				{
 					Debug.Log("client pending !!");
 
-					_server.AcceptClient(pendingClient);
+					_masterData.Server.AcceptClient(pendingClient);
 
 					pendingClient.Enqueue(new WorldInfo(
 						WorldGeneration.world.chunkWidth,
@@ -234,7 +151,10 @@ public class Plugin : BaseUnityPlugin
 						(uint)WorldGeneration.CHUNKSIZE,
 						__instance.transform.position.x,
 						__instance.transform.position.y,
+						_masterData.WorldGenSeed,
 						WorldGeneration.world.biomeDepth));
+					pendingClient.Enqueue(new ModifiedBlocksInfo(_modifiedBlocks));
+					pendingClient.Enqueue(new DestroyedEntitiesInfo(_destroyedEntityIds));
 				}
 			}
 			if (__instance == _mainExperiment.Body)
@@ -326,95 +246,109 @@ public class Plugin : BaseUnityPlugin
 		}
 		yield return null;
 		Debug.Log("Received handshake");
-		yield return null;
+		yield return _servInfo.WaitUntilHasData();
+		_worldInfo = _servInfo.Dequeue<WorldInfo>();
 		_askForWorld = true;
 		yield return instance.WaitLoad();
 	}
 
-	static IEnumerator DownloadWorldCoroutine(WorldGeneration instance)
-	{
-        instance.generatingWorld = true;
-        PlayerCamera.main.body.transform.position = Vector3.zero;
-        instance.loadingObject.SetActive(true);
-		// instance.currentTempCurve = biomeDepth;
-		yield return _servInfo.WaitUntilHasData();
-		var worldInfo = _servInfo.Dequeue<WorldInfo>();
-		Debug.Log($"worldInfo: {worldInfo.NumChunksX}x{worldInfo.NumChunksY}");
-		var chunkSize = (int)worldInfo.ChunkSize;
-		var worldBlocks = instance.worldBlocks;
-		instance.biomeDepth = worldInfo.BiomeDepth;
-		instance.UpdateBiomePostProcess();
-		var timer = new System.Diagnostics.Stopwatch();
-		timer.Start();
-		// _servInfo.Enqueue(new ChunkRequestWhole());
-		for (uint x = 0; x < worldInfo.NumChunksX; x++)
-		{
-			for (uint y = 0; y < worldInfo.NumChunksY; y++)
-			{
-				instance.ChangeLoadingText($"Downloading chunk {x}x{y}...");
-				_servInfo.Enqueue(new ChunkRequest(x, y));
-				yield return _servInfo.WaitUntilHasData();
-				var chunkInfo = _servInfo.Dequeue<ChunkInfo>();
-				var blockData = chunkInfo.Data;
-				var basePos = new Vector2Int((int)x, (int)y) * chunkSize;
-				for (int y2 = 0; y2 < chunkSize; y2++)
-				{
-					for (int x2 = 0; x2 < chunkSize; x2++)
-					{
-						ushort c = blockData[x2, y2];
-						worldBlocks[basePos.x + x2, basePos.y + y2] = c;
-					}
-				}
-			}
-		}
-		instance.ChangeLoadingText("Downloading chunk backgrounds...");
-		_servInfo.Enqueue(new ChunkBackgroundRequest());
-		yield return _servInfo.WaitUntilHasData();
-		var backgroundSpriteNames = _servInfo.Dequeue<ChunkBackgroundSpriteNames>().Names;
-		yield return _servInfo.WaitUntilHasData();
-		var backgroundSprites = _servInfo.Dequeue<ChunkBackground>().Entries;
-		var chunks = instance.chunks;
-		foreach (var entry in backgroundSprites)
-			instance.CreateBackground(backgroundSpriteNames[entry.NameIndex], chunks[entry.X, entry.Y]);
-		instance.ChangeLoadingText("Downloading wall holes...");
-		yield return _servInfo.WaitUntilHasData();
-		var wallholes = _servInfo.Dequeue<WallHoles>().Entries;
-		foreach (var entry in wallholes)
-		{
-			var v = new Vector2(entry.X, entry.Y);
-			UnityEngine.Object.Instantiate(
-				Resources.Load<GameObject>("Special/wallholes"),
-				v,
-				Quaternion.Euler(new Vector3(0, 0, entry.Rotation)),
-				instance.GetClosestChunk(instance.WorldToBlockPos(v)).transform
-			).GetComponent<AudioSource>().pitch = entry.WindPitch;
-		}
-
-		timer.Stop();
-		Debug.Log($"Elapsed: {timer.Elapsed}");
-
-		instance.ChangeLoadingText("Updating world tiles...");
-		instance.UpdateWorld();
-		instance.generatingWorld = false;
-		instance.DisableAllChunks();
-        instance.UpdateChunkVisibility();
-        instance.timeSinceFinishedGeneration = 0f;
-        instance.loadingObject.SetActive(false);
-		PlayerCamera.main.body.transform.position = new Vector2(worldInfo.CurrentExperimentPosX, worldInfo.CurrentExperimentPosY);
-	}
+	static WorldInfo _worldInfo;
 
 	[HarmonyPrefix]
-	[HarmonyPatch(typeof(global::WorldGeneration), "GenerateWorld")]
-	static bool PreRunScriptGenerateWorldPrefix(ref IEnumerator __result, WorldGeneration __instance)
+	[HarmonyPatch(typeof(global::WorldGeneration), "InstantiateWorld")]
+	static void PreRunScriptInstantiateWorldPrefix(ref bool generate)
 	{
 		if (!_askForWorld)
-			return true;
-		__result = DownloadWorldCoroutine(__instance);
-		return false;
+		{
+			_masterData = new();
+			_masterData.WorldGenSeed = UnityEngine.Random.state;
+		}
+		else
+		{
+			generate = true;
+			WorldGeneration.world.chunkWidth = _worldInfo.NumChunksX;
+			WorldGeneration.world.chunkHeight = _worldInfo.NumChunksY;
+			WorldGeneration.world.biomeDepth = _worldInfo.BiomeDepth;
+			UnityEngine.Random.state = _worldInfo.WorldGenSeed;
+		}
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::WorldGeneration), nameof(global::WorldGeneration.FinishWorldGeneration))]
+	static void WorldGenerationFinishWorldGenerationPostfix(WorldGeneration __instance, ref IEnumerator __result)
+	{
+		static IEnumerator ExecutePostfix(WorldGeneration instance, IEnumerator coroutine)
+		{
+			if (_servInfo == null)
+			{
+				Debug.Log("World gen finished, instantiating socket");
+				
+				var ep = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 5000);
+				_masterData.Server = new(ep);
+				_masterData.Server.Run();
+				_destroyedEntityIds = new();
+			}
+			else
+			{
+				Debug.Log("World gen finished, fixing world");
+				
+				yield return _servInfo.WaitUntilHasData();
+				var modifiedBlocks = _servInfo.Dequeue<ModifiedBlocksInfo>();
+				foreach (var kv in modifiedBlocks.Entries)
+				{
+					instance.SetBlock(kv.Key, kv.Value);
+				}
+				yield return _servInfo.WaitUntilHasData();
+				var destroyedEntities = _servInfo.Dequeue<DestroyedEntitiesInfo>();
+				var reverseMap = _entityIdentifierMap.ToDictionary(x => x.Value, x => x.Key);
+				foreach (var id in destroyedEntities.Entries)
+				{
+					if (reverseMap.TryGetValue(id, out BuildingEntity e) && e)
+						Object.Destroy(e.gameObject);
+				}
+			}
+			while (coroutine.MoveNext())
+				yield return coroutine.Current;
+			_isWorldInitFinished = true;
+		}
+		__result = ExecutePostfix(__instance, __result);
+	}
+
+	private static readonly Dictionary<Vector2Int, ushort> _modifiedBlocks = new();
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::WorldGeneration), nameof(global::WorldGeneration.SetBlock))]
+	static void WorldGenerationSetBlockPostfix(Vector2Int pos, ushort block)
+	{
+		if (_isWorldInitFinished && _masterData != null)
+			_modifiedBlocks[pos] = block;
 	}
 
 	private void OnDestroy()
 	{
 		_harmony?.UnpatchSelf();
+	}
+
+	private static Dictionary<BuildingEntity, int> _entityIdentifierMap = new();
+	private static List<int> _destroyedEntityIds;
+	private static int _currentMaxEntityId = 0;
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::BuildingEntity), nameof(global::BuildingEntity.Start))]
+	static void BuildingEntityStartPostfix(BuildingEntity __instance)
+	{
+		if (!_entityIdentifierMap.ContainsKey(__instance))
+			_entityIdentifierMap.Add(__instance, _currentMaxEntityId++);
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(typeof(global::BuildingEntity), "OnDestroy")]
+	static void BuildingEntityOnDestroyPostfix(BuildingEntity __instance)
+	{
+		if (_masterData != null && _entityIdentifierMap.TryGetValue(__instance, out int id))
+		{
+			_destroyedEntityIds.Add(id);
+			_entityIdentifierMap.Remove(__instance);
+		}
 	}
 }

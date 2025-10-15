@@ -1,0 +1,24 @@
+﻿<!--
+  This is a project that compiles the Unity primitives serializer for MessagePack
+  There is no Nuget package only for it, and the official docs
+  (https://github.com/MessagePack-CSharp/MessagePack-CSharp/tree/master?tab=readme-ov-file#unity-support)
+  only provide a way to include this in a Unity Project, which is obviously not
+  applicable in our case. Therefore we are forced to compile its sources by hand
+-->
+
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+	<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MessagePack" Version="3.1.4" />
+    <PackageReference Include="UnityEngine.Modules" Version="2022.3.18" IncludeAssets="compile" />
+  </ItemGroup>
+
+</Project>
