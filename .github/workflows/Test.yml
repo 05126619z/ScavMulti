@@ -26,7 +26,8 @@ jobs:
         echo $request
         $jsonlink = ConvertFrom-Json $request
         Invoke-WebRequest $jsonlink.url -OutFile "$env:GAME_NAME.zip"
-        Expand-Archive -Path "$env:GAME_NAME.zip" -DestinationPath .
+        mkdir $env:GAME_NAME
+        Expand-Archive -Path "$env:GAME_NAME.zip" -DestinationPath ./$env:GAME_NAME
         rm ".\$env:GAME_NAME.zip" -r -fo
     - name: Upload game files
       uses: actions/upload-artifact@v4
