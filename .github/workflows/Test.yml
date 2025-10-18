@@ -44,6 +44,8 @@ jobs:
     runs-on: windows-2022
     environment: workflows
     steps:
+    - name: Download solution files
+      uses: actions/checkout@v4
     - name: Download game files
       uses: actions/download-artifact@v4
       with:
