@@ -9,14 +9,12 @@ public class ServerManager : MonoBehaviour
 {
 	private bool _willServerRun = false;
 	private bool _isRunning = false;
-	private UnityEngine.Random.State _worldGenSeed { get; set; }
 	private Server _server { get; set; }
 
 	void Awake()
 	{
 		GameFlowManager.OnRunStart += OnRunStart;
 		GameFlowManager.OnRunLeave += OnRunLeave;
-		GameFlowManager.OnWorldGenStart += () => _worldGenSeed = UnityEngine.Random.state;
 		GameFlowManager.OnWorldGenEnd += OnWorldGenEnd;
 	}
 
@@ -87,7 +85,7 @@ public class ServerManager : MonoBehaviour
 					(uint)WorldGeneration.CHUNKSIZE,
 					global::PlayerCamera.main.body.transform.position.x,
 					global::PlayerCamera.main.body.transform.position.y,
-					_worldGenSeed,
+					RunInfo.WorldGenSeed,
 					WorldGeneration.world.biomeDepth,
 					RunInfo.ModifiedBlocks,
 					RunInfo.DestroyedEntityIds

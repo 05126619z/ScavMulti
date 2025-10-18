@@ -49,6 +49,7 @@ public static class RunInfo
 
 	private static void OnWorldGenStart()
 	{
+		WorldGenSeed = UnityEngine.Random.state;
 		_entityIdentifierMap = new();
 		_reverseEntityIdentifierMap = new();
 		_currentMaxEntityId = 0;
@@ -70,4 +71,5 @@ public static class RunInfo
 	public static IReadOnlyDictionary<global::BuildingEntity, int> EntityIdentifierMap => _entityIdentifierMap;
 	public static IReadOnlyDictionary<int, global::BuildingEntity> ReverseEntityIdentifierMap => _reverseEntityIdentifierMap;
 	public static IReadOnlyList<int> DestroyedEntityIds => _destroyedEntityIds;
+	public static UnityEngine.Random.State WorldGenSeed { get; private set; }
 }
