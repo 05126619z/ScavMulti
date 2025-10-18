@@ -24,15 +24,8 @@ public record class WorldInfo(
 	[property: Key(3)] float CurrentExperimentPosX,
 	[property: Key(4)] float CurrentExperimentPosY,
 	[property: Key(5)] UnityEngine.Random.State WorldGenSeed,
-	[property: Key(6)] int BiomeDepth 
-) : MessageBase;
+	[property: Key(6)] int BiomeDepth,
+	[property: Key(7)] IReadOnlyDictionary<Vector2Int, ushort> ModifiedBlocks,
+	[property: Key(8)] IEnumerable<int> DestroyedEntities
 
-[MessagePackObject]
-public record class ModifiedBlocksInfo(
-	[property: Key(0)] Dictionary<Vector2Int, ushort> Entries
-) : MessageBase;
-
-[MessagePackObject]
-public record class DestroyedEntitiesInfo(
-	[property: Key(0)] IEnumerable<int> Entries
 ) : MessageBase;

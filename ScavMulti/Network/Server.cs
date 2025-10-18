@@ -50,7 +50,7 @@ public class Server : IEnumerable<Client>, IDisposable
 		{
 			if (e is SocketException or ObjectDisposedException)
 			{
-				UnityEngine.Debug.LogError($"error while accepting tcp client: {e}");
+				Logger.LogError($"Error while accepting tcp client: {e}");
 			}
 			else throw;
 		}
