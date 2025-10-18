@@ -61,5 +61,5 @@ jobs:
       with:
         name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
         path: |
-          ${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
+          ../$env:GAME_NAME/BepInEx/$env:MOD_NAME/${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
         retention-days: 30
