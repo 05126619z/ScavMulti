@@ -1,0 +1,68 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Test and build
+
+on: [workflow_dispatch, push, pull_request]
+
+env:
+    GAME_FILE: ${{ vars.GAME_FILE }}
+    GAME_NAME: ${{ vars.GAME_NAME }}
+    MOD_NAME: ${{ vars.MOD_NAME }}
+
+jobs:
+  setup:
+    runs-on: windows-2022
+    environment: workflows
+    outputs:
+      game-path: ${{ steps.setup.outputs.game-path }}
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download and unpack game
+      id: path
+      shell: pwsh
+      run: |
+        $request = Invoke-WebRequest https://itch.io/api/1/${{ secrets.ITCHTKN }}/upload/$env:GAME_FILE/download
+        echo $request
+        $jsonlink = ConvertFrom-Json $request
+        Invoke-WebRequest $jsonlink.url -OutFile "$env:GAME_NAME.zip"
+        Expand-Archive -Path "$env:GAME_NAME.zip" -DestinationPath .
+        rm ".\$env:GAME_NAME.zip" -r -fo
+        dir
+        echo "GAME_PATH=$pwd" >> $env:GITHUB_ENV
+    - name: Upload game files
+      uses: actions/upload-artifact@v4
+      with:
+        name: game-files
+        path: ${{ env.GAME_PATH }}
+
+  test:
+    needs: setup
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [x64, x86]
+    runs-on: windows-2022
+    environment: workflows
+    steps:
+    - name: Download game files
+      uses: actions/download-artifact@v4
+      with:
+        name: game-files
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 9.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build for ${{ matrix.platform }}
+      run: |
+          echo $(pwd)\$env:GAME_NAME
+          dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:GamePath="$(pwd)\$env:GAME_NAME" -p:OutputPath=".."
+    - name: Publish artifacts for ${{ matrix.platform }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
+        path: |
+          ${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
+        retention-days: 30

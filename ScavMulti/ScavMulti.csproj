@@ -26,7 +26,7 @@
     <PackageReference Include="MessagePack" Version="3.1.4" />
     <PackageReference Include="MessagePack.ReactiveProperty" Version="3.1.4" />
 
-	<Reference Include="Assembly-CSharp" Publicize="true" >
+	<Reference Include="Assembly-CSharp" Publicize="true">
 	  <HintPath>$(GameAssembliesDir)/Assembly-CSharp.dll</HintPath>
 	</Reference>
 
