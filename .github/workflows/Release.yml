@@ -52,8 +52,6 @@ jobs:
         Invoke-WebRequest $jsonlink.url -OutFile "$env:GAME_NAME.zip"
         Expand-Archive -Path "$env:GAME_NAME.zip" -DestinationPath .
         rm ".\$env:GAME_NAME.zip" -r -fo
-        dir
-        echo "GAME_PATH=$pwd" >> $env:GITHUB_ENV
     - name: Upload game files
       uses: actions/upload-artifact@v4
       with:
@@ -80,7 +78,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build for ${{ matrix.platform }}
-      run: dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:GamePath="$(pwd)\$($env:GAME_NAME)" -p:OutputPath=".."
+      run: dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../$env:GAME_NAME"
     - name: Create Release for ${{ matrix.platform }}
       uses: softprops/action-gh-release@v2
       with:
@@ -89,6 +87,6 @@ jobs:
         draft: ${{ github.event.inputs.is_draft }}
         body: ${{ github.event.inputs.release_notes }}
         files: |
-          ${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
+          ../$env:GAME_NAME/BepInEx/$env:MOD_NAME/${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
