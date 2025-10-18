@@ -50,7 +50,7 @@ public class Server : IEnumerable<Client>, IDisposable
 		{
 			if (e is SocketException or ObjectDisposedException)
 			{
-				UnityEngine.Debug.LogError($"error while accepting tcp client: {e}");
+				Logger.LogError($"Error while accepting tcp client: {e}");
 			}
 			else throw;
 		}
@@ -152,7 +152,12 @@ public class Server : IEnumerable<Client>, IDisposable
 	{
 		if (_disposed)
 			return;
-		// TODO
+		foreach (var client in _clients)
+		{
+			client.Dispose();
+		}
+		_listener.Stop();
+		// TODO is there more stuff to do
 		_disposed = true;
 	}
 }
