@@ -52,7 +52,9 @@ jobs:
       with:
         dotnet-version: 9.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+          dir
+          dotnet restore
     - name: Build for ${{ matrix.platform }}
       run: |
           dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../$env:GAME_NAME"
