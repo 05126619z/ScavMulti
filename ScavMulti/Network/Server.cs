@@ -152,7 +152,12 @@ public class Server : IEnumerable<Client>, IDisposable
 	{
 		if (_disposed)
 			return;
-		// TODO
+		foreach (var client in _clients)
+		{
+			client.Dispose();
+		}
+		_listener.Stop();
+		// TODO is there more stuff to do
 		_disposed = true;
 	}
 }
