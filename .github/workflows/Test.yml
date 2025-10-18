@@ -28,8 +28,6 @@ jobs:
         Invoke-WebRequest $jsonlink.url -OutFile "$env:GAME_NAME.zip"
         Expand-Archive -Path "$env:GAME_NAME.zip" -DestinationPath .
         rm ".\$env:GAME_NAME.zip" -r -fo
-        dir
-        echo "GAME_PATH=$pwd" >> $env:GITHUB_ENV
     - name: Upload game files
       uses: actions/upload-artifact@v4
       with:
@@ -57,8 +55,7 @@ jobs:
       run: dotnet restore
     - name: Build for ${{ matrix.platform }}
       run: |
-          echo $(pwd)\$env:GAME_NAME
-          dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:GamePath="$(pwd)\$env:GAME_NAME" -p:OutputPath=".."
+          dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../$env:GAME_NAME"
     - name: Publish artifacts for ${{ matrix.platform }}
       uses: actions/upload-artifact@v4
       with:
