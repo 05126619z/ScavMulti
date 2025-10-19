@@ -14,6 +14,7 @@
 		</RestoreAdditionalProjectSources>
 		<RootNamespace>ScavMulti</RootNamespace>
 		<AssemblyName>$(AssemblyName)-$(Platform)</AssemblyName>
+		<Platforms>AnyCPU;x64;x86</Platforms>
 	</PropertyGroup>
 
 	<Import Project="../vars.targets" />
