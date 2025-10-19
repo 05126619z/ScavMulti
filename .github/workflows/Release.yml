@@ -83,6 +83,13 @@ jobs:
         cd ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dir
         echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
+    - name: Publish artifacts for ${{ matrix.platform }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
+        path: |
+          ${{ env.MOD_PATH }}
+        retention-days: 30
     - name: Create tag
       run: |
         gh release create ${{ github.event.inputs.version }}
@@ -96,6 +103,6 @@ jobs:
         draft: ${{ github.event.inputs.is_draft }}
         body: ${{ github.event.inputs.release_notes }}
         files: |
-          ${{ env.MOD_PATH }}
+          ${{ env.MOD_NAME }}-${{ matrix.platform }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
