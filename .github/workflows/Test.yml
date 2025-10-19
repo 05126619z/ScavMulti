@@ -60,7 +60,7 @@ jobs:
           dotnet restore
     - name: Build for ${{ matrix.platform }}
       run: |
-        mkdir ..\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+        mkdir .\${{ env.GAME_NAME }}\BepInEx\plugins
         dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../${{ env.GAME_NAME }}"
     - name: Do dir all folders
       run: |
