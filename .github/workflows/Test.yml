@@ -65,7 +65,7 @@ jobs:
     - name: Do dir all folders
       run: |
         dir
-        cd ..
+        cd .
         dir
         cd ${{ env.GAME_NAME }}
         dir
