@@ -60,8 +60,8 @@ jobs:
           dotnet restore
     - name: Build for ${{ matrix.platform }}
       run: |
-        mkdir .\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
-        dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../${{ env.GAME_NAME }}"
+        mkdir ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+        dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="${{ github.workspace }}/${{ env.GAME_NAME }}"
     - name: Do dir all folders
       run: |
         dir
@@ -77,7 +77,7 @@ jobs:
         dir
     - name: Set the mod path variable
       run: |
-        cd .\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+        cd ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dir
         echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
     - name: Publish artifacts for ${{ matrix.platform }}
