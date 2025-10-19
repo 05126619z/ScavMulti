@@ -71,4 +71,12 @@
 		</CombinePath>
 		<Copy SourceFiles="@(RequiredFilesToCopy_Combined)" DestinationFolder="$(BepInExDir)/plugins/$(PluginDirName)" />
 	</Target>
+	
+	<Target Name="CopyOutputDllsToPluginsFolder" Condition="'$(Configuration)'=='RELEASE'" AfterTargets="AfterBuild">
+		<MakeDir Directories="$(BepInExDir)/plugins/$(PluginDirName)" />
+		<CombinePath BasePath="$(OutDir)" Paths="$(RequiredFilesToCopy)">
+			<Output TaskParameter="CombinedPaths" ItemName="RequiredFilesToCopy_Combined" />
+		</CombinePath>
+		<Copy SourceFiles="@(RequiredFilesToCopy_Combined)" DestinationFolder="$(BepInExDir)/plugins/$(PluginDirName)" />
+	</Target>
 </Project>
