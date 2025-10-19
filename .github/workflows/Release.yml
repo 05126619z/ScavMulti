@@ -38,10 +38,6 @@ jobs:
       game-path: ${{ steps.setup.outputs.game-path }}
     steps:
     - uses: actions/checkout@v4
-    - name: Create new tag
-      uses: rickstaa/action-create-tag@v1.7.2
-      with:
-        tag: ${{ github.event.inputs.version }}
     - name: Download and unpack game
       id: path
       shell: pwsh
@@ -86,6 +82,12 @@ jobs:
         cd ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dir
         echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
+    - name: Create tag
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git tag -a "${{ github.event.inputs.version }}" -m "Release ${{ github.event.inputs.version }}"
+        git push origin "${{ github.event.inputs.version }}"
     - name: Create Release for ${{ matrix.platform }}
       uses: softprops/action-gh-release@v2
       with:
