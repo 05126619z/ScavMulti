@@ -53,7 +53,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: game-files
-        path: ${{ env.GAME_PATH }}
+        path: ${{ env.GAME_NAME }}
 
   build:
     needs: setup
