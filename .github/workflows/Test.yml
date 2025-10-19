@@ -62,19 +62,6 @@ jobs:
       run: |
         mkdir ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="${{ github.workspace }}/${{ env.GAME_NAME }}"
-    - name: Do dir all folders
-      run: |
-        dir
-        cd .
-        dir
-        cd ${{ env.GAME_NAME }}
-        dir
-        cd BepInEx
-        dir
-        cd plugins
-        dir
-        cd ${{ env.MOD_NAME }}
-        dir
     - name: Set the mod path variable
       run: |
         cd ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
