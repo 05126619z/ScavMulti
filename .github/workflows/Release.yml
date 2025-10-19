@@ -83,26 +83,12 @@ jobs:
         cd ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dir
         echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
-    - name: Publish artifacts for ${{ matrix.platform }}
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
-        path: |
-          ${{ env.MOD_PATH }}
-        retention-days: 30
-    - name: Create tag
+    - name: Create Release for ${{ matrix.platform }}
       run: |
         gh release create ${{ github.event.inputs.version }}
+        gh release upload ${{ github.event.inputs.version }} ${{ env.MOD_PATH }}\*
+        gh release edit ${{ github.event.inputs.version }} -n ${{ github.event.inputs.release_notes }}
+        if ('${{ github.event.inputs.is_draft }}' -eq 'true') {gh release edit ${{ github.event.inputs.version }} --draft}
+        if ('${{ github.event.inputs.is_prerelease }}' -eq 'true') {gh release edit ${{ github.event.inputs.version }} --prerelease}
       env:
         GH_TOKEN: ${{ github.token }}
-    - name: Create Release for ${{ matrix.platform }}
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.event.inputs.version }}
-        prerelease: ${{ github.event.inputs.is_prerelease }}
-        draft: ${{ github.event.inputs.is_draft }}
-        body: ${{ github.event.inputs.release_notes }}
-        files: |
-          ${{ env.MOD_NAME }}-${{ matrix.platform }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
