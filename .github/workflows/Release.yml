@@ -86,6 +86,8 @@ jobs:
     - name: Create tag
       run: |
         gh release create ${{ github.event.inputs.version }}
+      env:
+        GH_TOKEN: ${{ github.token }}
     - name: Create Release for ${{ matrix.platform }}
       uses: softprops/action-gh-release@v2
       with:
