@@ -64,6 +64,7 @@ jobs:
     runs-on: windows-2022
     environment: workflows
     steps:
+    - uses: actions/checkout@v4
     - name: Download game files
       uses: actions/download-artifact@v4
       with:
@@ -84,10 +85,7 @@ jobs:
         echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
     - name: Create tag
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git tag -a "${{ github.event.inputs.version }}" -m "Release ${{ github.event.inputs.version }}"
-        git push origin "${{ github.event.inputs.version }}"
+        gh release create ${{ github.event.inputs.version }}
     - name: Create Release for ${{ matrix.platform }}
       uses: softprops/action-gh-release@v2
       with:
