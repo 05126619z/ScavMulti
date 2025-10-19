@@ -60,7 +60,6 @@ jobs:
           dotnet restore
     - name: Build for ${{ matrix.platform }}
       run: |
-        mkdir ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
         dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="${{ github.workspace }}/${{ env.GAME_NAME }}"
     - name: Set the mod path variable
       run: |
