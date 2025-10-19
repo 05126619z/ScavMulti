@@ -85,5 +85,5 @@ jobs:
       with:
         name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
         path: |
-          ${{ env.MOD_PATH }}\*
+          ${{ env.MOD_PATH }}
         retention-days: 30
