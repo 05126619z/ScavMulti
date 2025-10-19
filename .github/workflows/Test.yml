@@ -61,7 +61,7 @@ jobs:
     - name: Build for ${{ matrix.platform }}
       run: |
           dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../$env:GAME_NAME"
-          dir .\${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+          dir ${{ github.workspace }}\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
     - name: Publish artifacts for ${{ matrix.platform }}
       uses: actions/upload-artifact@v4
       with:
