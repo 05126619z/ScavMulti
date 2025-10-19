@@ -61,11 +61,12 @@ jobs:
     - name: Build for ${{ matrix.platform }}
       run: |
           dotnet build --no-restore --configuration Release -p:Platform=${{ matrix.platform }} -p:BaseGamePath="../$env:GAME_NAME"
-          dir ${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+          cd ..\${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}
+          echo "MOD_PATH=$pwd" >> $env:GITHUB_ENV
     - name: Publish artifacts for ${{ matrix.platform }}
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.MOD_NAME }}-${{ matrix.platform }}
         path: |
-          ${{ env.GAME_NAME }}\BepInEx\plugins\${{ env.MOD_NAME }}\${{ env.MOD_NAME }}-${{ matrix.platform }}.dll
+          ${{ env.MOD_PATH }}\**
         retention-days: 30
